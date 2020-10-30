@@ -5,6 +5,7 @@
 package api
 
 import (
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -43,12 +44,20 @@ const (
 	largeFileBufferSize = 16 * 32 * 1024
 
 	largeBufferFilesizeThreshold = 10 * 1000000 // ten megs
+
 )
 
 var (
 	errInvalidNameOrAddress = errors.New("invalid name or bzz address")
 	errNoResolver           = errors.New("no resolver connected")
+	errInvalidPostageBatch  = errors.New("invalid postage batch id")
+
+	fallbackPostageBatch []byte
 )
+
+func init() {
+	fallbackPostageBatch = make([]byte, 32)
+}
 
 // Service is the API service interface.
 type Service interface {
@@ -179,6 +188,16 @@ func requestModePut(r *http.Request) storage.ModePut {
 
 func requestEncrypt(r *http.Request) bool {
 	return strings.ToLower(r.Header.Get(SwarmEncryptHeader)) == "true"
+}
+
+func requestBatchId(r *http.Request) ([]byte, error) {
+	if h := strings.ToLower(r.Header.Get(SwarmPostageBatchIdHeader)); h != "" {
+		if len(h) != 64 {
+			return nil, errInvalidPostageBatch
+		}
+		return hex.DecodeString(h)
+	}
+	return storage.ModePutUpload
 }
 
 func (s *server) newTracingHandler(spanName string) func(h http.Handler) http.Handler {
