@@ -61,7 +61,7 @@ func (s *server) dirUploadHandler(w http.ResponseWriter, r *http.Request) {
 	// Add the tag to the context
 	ctx := sctx.SetTag(r.Context(), tag)
 
-	reference, err := storeDir(ctx, r.Body, s.Storer, requestModePut(r), s.Logger, requestEncrypt(r), r.Header.Get(SwarmIndexDocumentHeader), r.Header.Get(SwarmErrorDocumentHeader))
+	reference, err := storeDir(ctx, r.Body, s.Storer, requestModePut(r), s.Logger, requestEncrypt(r), r.Header.Get(SwarmIndexDocumentHeader), r.Header.Get(SwarmErrorDocumentHeader), requestPostageBatchId(r))
 	if err != nil {
 		logger.Debugf("dir upload: store dir err: %v", err)
 		logger.Errorf("dir upload: store dir")
@@ -101,7 +101,7 @@ func validateRequest(r *http.Request) error {
 
 // storeDir stores all files recursively contained in the directory given as a tar
 // it returns the hash for the uploaded manifest corresponding to the uploaded dir
-func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode storage.ModePut, log logging.Logger, encrypt bool, indexFilename string, errorFilename string) (swarm.Address, error) {
+func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode storage.ModePut, log logging.Logger, encrypt bool, indexFilename string, errorFilename string, batch []byte) (swarm.Address, error) {
 	logger := tracing.NewLoggerWithTraceID(ctx, log)
 
 	dirManifest, err := manifest.NewDefaultManifest(encrypt, s)
@@ -146,7 +146,7 @@ func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode 
 			contentType: contentType,
 			reader:      tarReader,
 		}
-		fileReference, err := storeFile(ctx, fileInfo, s, mode, encrypt)
+		fileReference, err := storeFile(ctx, fileInfo, s, mode, encrypt, batch)
 		if err != nil {
 			return swarm.ZeroAddress, fmt.Errorf("store dir file: %w", err)
 		}
@@ -196,7 +196,7 @@ func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode 
 		return swarm.ZeroAddress, fmt.Errorf("metadata marshal: %w", err)
 	}
 
-	pipe := builder.NewPipelineBuilder(ctx, s, mode, encrypt)
+	pipe := builder.NewPipelineBuilder(ctx, s, mode, encrypt, batch)
 	mr, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(metadataBytes), int64(len(metadataBytes)))
 	if err != nil {
 		return swarm.ZeroAddress, fmt.Errorf("split metadata: %w", err)
@@ -209,7 +209,7 @@ func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode 
 		return swarm.ZeroAddress, fmt.Errorf("entry marshal: %w", err)
 	}
 
-	pipe = builder.NewPipelineBuilder(ctx, s, mode, encrypt)
+	pipe = builder.NewPipelineBuilder(ctx, s, mode, encrypt, batch)
 	manifestFileReference, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(fileEntryBytes), int64(len(fileEntryBytes)))
 	if err != nil {
 		return swarm.ZeroAddress, fmt.Errorf("split entry: %w", err)
@@ -220,9 +220,9 @@ func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode 
 
 // storeFile uploads the given file and returns its reference
 // this function was extracted from `fileUploadHandler` and should eventually replace its current code
-func storeFile(ctx context.Context, fileInfo *fileUploadInfo, s storage.Storer, mode storage.ModePut, encrypt bool) (swarm.Address, error) {
+func storeFile(ctx context.Context, fileInfo *fileUploadInfo, s storage.Storer, mode storage.ModePut, encrypt bool, batch []byte) (swarm.Address, error) {
 	// first store the file and get its reference
-	pipe := builder.NewPipelineBuilder(ctx, s, mode, encrypt)
+	pipe := builder.NewPipelineBuilder(ctx, s, mode, encrypt, batch)
 	fr, err := builder.FeedPipeline(ctx, pipe, fileInfo.reader, fileInfo.size)
 	if err != nil {
 		return swarm.ZeroAddress, fmt.Errorf("split file: %w", err)
@@ -241,7 +241,7 @@ func storeFile(ctx context.Context, fileInfo *fileUploadInfo, s storage.Storer, 
 		return swarm.ZeroAddress, fmt.Errorf("metadata marshal: %w", err)
 	}
 
-	pipe = builder.NewPipelineBuilder(ctx, s, mode, encrypt)
+	pipe = builder.NewPipelineBuilder(ctx, s, mode, encrypt, batch)
 	mr, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(metadataBytes), int64(len(metadataBytes)))
 	if err != nil {
 		return swarm.ZeroAddress, fmt.Errorf("split metadata: %w", err)
@@ -253,7 +253,7 @@ func storeFile(ctx context.Context, fileInfo *fileUploadInfo, s storage.Storer, 
 	if err != nil {
 		return swarm.ZeroAddress, fmt.Errorf("entry marshal: %w", err)
 	}
-	pipe = builder.NewPipelineBuilder(ctx, s, mode, encrypt)
+	pipe = builder.NewPipelineBuilder(ctx, s, mode, encrypt, batch)
 	reference, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(fileEntryBytes), int64(len(fileEntryBytes)))
 	if err != nil {
 		return swarm.ZeroAddress, fmt.Errorf("split entry: %w", err)

@@ -190,7 +190,7 @@ func requestEncrypt(r *http.Request) bool {
 	return strings.ToLower(r.Header.Get(SwarmEncryptHeader)) == "true"
 }
 
-func requestBatchId(r *http.Request) ([]byte, error) {
+func requestPostageBatchId(r *http.Request) ([]byte, error) {
 	if h := strings.ToLower(r.Header.Get(SwarmPostageBatchIdHeader)); h != "" {
 		if len(h) != 64 {
 			return nil, errInvalidPostageBatch
