@@ -25,11 +25,12 @@ import (
 )
 
 const (
-	SwarmPinHeader           = "Swarm-Pin"
-	SwarmTagUidHeader        = "Swarm-Tag-Uid"
-	SwarmEncryptHeader       = "Swarm-Encrypt"
-	SwarmIndexDocumentHeader = "Swarm-Index-Document"
-	SwarmErrorDocumentHeader = "Swarm-Error-Document"
+	SwarmPinHeader            = "Swarm-Pin"
+	SwarmTagUidHeader         = "Swarm-Tag-Uid"
+	SwarmEncryptHeader        = "Swarm-Encrypt"
+	SwarmIndexDocumentHeader  = "Swarm-Index-Document"
+	SwarmErrorDocumentHeader  = "Swarm-Error-Document"
+	SwarmPostageBatchIdHeader = "Swarm-Postage-Batch-Id"
 )
 
 // The size of buffer used for prefetching content with Langos.
