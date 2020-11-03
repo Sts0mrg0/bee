@@ -177,7 +177,15 @@ func (s *server) fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 		jsonhttp.InternalServerError(w, "metadata marshal error")
 		return
 	}
-	pipe = builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), requestPostageBatchId(r))
+
+	batch, err := requestPostageBatchId(r)
+	if err != nil {
+		logger.Debugf("file upload: postage batch id:%v", err)
+		logger.Error("file upload: postage batch id")
+		jsonhttp.InternalServerError(w, nil)
+		return
+	}
+	pipe = builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), batch)
 	mr, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(metadataBytes), int64(len(metadataBytes)))
 	if err != nil {
 		logger.Debugf("file upload: metadata store, file %q: %v", fileName, err)
@@ -195,7 +203,8 @@ func (s *server) fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 		jsonhttp.InternalServerError(w, "entry marshal error")
 		return
 	}
-	pipe = builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), requestPostageBatchId(r))
+
+	pipe = builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), batch)
 	reference, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(fileEntryBytes), int64(len(fileEntryBytes)))
 	if err != nil {
 		logger.Debugf("file upload: entry store, file %q: %v", fileName, err)
