@@ -112,7 +112,7 @@ func validateRequest(r *http.Request) error {
 func storeDir(ctx context.Context, reader io.ReadCloser, s storage.Storer, mode storage.ModePut, log logging.Logger, encrypt bool, indexFilename string, errorFilename string, batch []byte) (swarm.Address, error) {
 	logger := tracing.NewLoggerWithTraceID(ctx, log)
 
-	dirManifest, err := manifest.NewDefaultManifest(encrypt, s)
+	dirManifest, err := manifest.NewDefaultManifest(encrypt, s, batch)
 	if err != nil {
 		return swarm.ZeroAddress, err
 	}

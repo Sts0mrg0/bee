@@ -29,6 +29,7 @@ type mantarayManifest struct {
 
 	encrypted bool
 	storer    storage.Storer
+	batch     []byte
 
 	loader mantaray.LoadSaver
 }
@@ -37,11 +38,13 @@ type mantarayManifest struct {
 func NewMantarayManifest(
 	encrypted bool,
 	storer storage.Storer,
+	batch []byte,
 ) (Interface, error) {
 	return &mantarayManifest{
 		trie:      mantaray.New(),
 		encrypted: encrypted,
 		storer:    storer,
+		batch:     batch,
 	}, nil
 }
 
