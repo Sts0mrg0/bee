@@ -115,7 +115,7 @@ func (m *mantarayManifest) HasPrefix(prefix string) (bool, error) {
 
 func (m *mantarayManifest) Store(ctx context.Context, mode storage.ModePut) (swarm.Address, error) {
 
-	saver := newMantaraySaver(ctx, m.encrypted, m.storer, mode)
+	saver := newMantaraySaver(ctx, m.encrypted, m.storer, mode, m.batch)
 
 	err := m.trie.Save(saver)
 	if err != nil {
@@ -133,6 +133,7 @@ type mantarayLoadSaver struct {
 	encrypted bool
 	storer    storage.Storer
 	modePut   storage.ModePut
+	batch     []byte
 }
 
 func newMantarayLoader(
@@ -152,12 +153,14 @@ func newMantaraySaver(
 	encrypted bool,
 	storer storage.Storer,
 	modePut storage.ModePut,
+	batch []byte,
 ) *mantarayLoadSaver {
 	return &mantarayLoadSaver{
 		ctx:       ctx,
 		encrypted: encrypted,
 		storer:    storer,
 		modePut:   modePut,
+		batch:     batch,
 	}
 }
 
@@ -181,7 +184,7 @@ func (ls *mantarayLoadSaver) Load(ref []byte) ([]byte, error) {
 func (ls *mantarayLoadSaver) Save(data []byte) ([]byte, error) {
 	ctx := ls.ctx
 
-	pipe := builder.NewPipelineBuilder(ctx, ls.storer, ls.modePut, ls.encrypted)
+	pipe := builder.NewPipelineBuilder(ctx, ls.storer, ls.modePut, ls.encrypted, ls.batch)
 	address, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(data), int64(len(data)))
 
 	if err != nil {

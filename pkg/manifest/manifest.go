@@ -65,9 +65,9 @@ func NewManifest(
 ) (Interface, error) {
 	switch manifestType {
 	case ManifestSimpleContentType:
-		return NewSimpleManifest(encrypted, storer)
+		return NewSimpleManifest(encrypted, storer, batch)
 	case ManifestMantarayContentType:
-		return NewMantarayManifest(encrypted, storer)
+		return NewMantarayManifest(encrypted, storer, batch)
 	default:
 		return nil, ErrInvalidManifestType
 	}

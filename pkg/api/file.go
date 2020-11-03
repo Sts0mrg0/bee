@@ -152,8 +152,16 @@ func (s *server) fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 		reader = tmp
 	}
 
+	batch, err := requestPostageBatchId(r)
+	if err != nil {
+		logger.Debugf("file upload: postage batch id:%v", err)
+		logger.Error("file upload: postage batch id")
+		jsonhttp.InternalServerError(w, nil)
+		return
+	}
+
 	// first store the file and get its reference
-	pipe := builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), requestPostageBatchid(r))
+	pipe := builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), batch)
 	fr, err := builder.FeedPipeline(ctx, pipe, reader, int64(fileSize))
 	if err != nil {
 		logger.Debugf("file upload: file store, file %q: %v", fileName, err)
@@ -178,13 +186,6 @@ func (s *server) fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	batch, err := requestPostageBatchId(r)
-	if err != nil {
-		logger.Debugf("file upload: postage batch id:%v", err)
-		logger.Error("file upload: postage batch id")
-		jsonhttp.InternalServerError(w, nil)
-		return
-	}
 	pipe = builder.NewPipelineBuilder(ctx, s.Storer, mode, requestEncrypt(r), batch)
 	mr, err := builder.FeedPipeline(ctx, pipe, bytes.NewReader(metadataBytes), int64(len(metadataBytes)))
 	if err != nil {
