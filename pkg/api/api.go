@@ -44,7 +44,6 @@ const (
 	largeFileBufferSize = 16 * 32 * 1024
 
 	largeBufferFilesizeThreshold = 10 * 1000000 // ten megs
-
 )
 
 var (
