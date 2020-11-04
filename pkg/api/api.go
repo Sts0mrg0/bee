@@ -196,7 +196,9 @@ func requestPostageBatchId(r *http.Request) ([]byte, error) {
 		}
 		return hex.DecodeString(h)
 	}
-	return fallbackPostageBatch, nil
+	b := make([]byte, len(fallbackPostageBatch))
+	_ = copy(b, fallbackPostageBatch)
+	return b, nil
 }
 
 func (s *server) newTracingHandler(spanName string) func(h http.Handler) http.Handler {
