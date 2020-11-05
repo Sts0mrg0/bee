@@ -151,12 +151,11 @@ func (s *server) fileUploadHandler(w http.ResponseWriter, r *http.Request) {
 		fileSize = uint64(n)
 		reader = tmp
 	}
-
 	batch, err := requestPostageBatchId(r)
 	if err != nil {
 		logger.Debugf("file upload: postage batch id:%v", err)
 		logger.Error("file upload: postage batch id")
-		jsonhttp.InternalServerError(w, nil)
+		jsonhttp.BadRequest(w, nil)
 		return
 	}
 

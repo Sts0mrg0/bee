@@ -39,7 +39,7 @@ func (s *server) bytesUploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Debugf("bytes upload: postage batch id:%v", err)
 		logger.Error("bytes upload: postage batch id")
-		jsonhttp.InternalServerError(w, nil)
+		jsonhttp.BadRequest(w, nil)
 		return
 	}
 
