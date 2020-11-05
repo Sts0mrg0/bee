@@ -50,13 +50,7 @@ var (
 	errInvalidNameOrAddress = errors.New("invalid name or bzz address")
 	errNoResolver           = errors.New("no resolver connected")
 	errInvalidPostageBatch  = errors.New("invalid postage batch id")
-
-	fallbackPostageBatch []byte
 )
-
-func init() {
-	fallbackPostageBatch = make([]byte, 32)
-}
 
 // Service is the API service interface.
 type Service interface {
@@ -196,9 +190,9 @@ func requestPostageBatchId(r *http.Request) ([]byte, error) {
 		}
 		return hex.DecodeString(h)
 	}
-	b := make([]byte, len(fallbackPostageBatch))
-	_ = copy(b, fallbackPostageBatch)
-	return b, nil
+
+	// fallback to a slice of 32 zeros
+	return make([]byte, 32), nil
 }
 
 func (s *server) newTracingHandler(spanName string) func(h http.Handler) http.Handler {
